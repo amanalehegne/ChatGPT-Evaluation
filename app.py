@@ -1,10 +1,10 @@
 from flask import Flask, request, jsonify
-from openai import OpenAI
+import openai
 import os
 
 api_key = os.getenv("API_KEY", "your_default_api_key_if_not_set")
 
-client = OpenAI(api_key=api_key)
+client = openai.OpenAI(api_key=api_key)
 
 app = Flask(__name__)
 

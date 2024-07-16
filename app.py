@@ -3,8 +3,7 @@ import openai
 import os
 
 api_key = os.getenv("API_KEY", "your_default_api_key_if_not_set")
-
-client = openai.OpenAI(api_key=api_key)
+openai.api_key = api_key
 
 app = Flask(__name__)
 
@@ -45,13 +44,15 @@ def evaluate():
                 prompt += f"{key}: {value}\n"
             prompt += f"\nProvide a numerical score out of 3 for the {criterion} based on the relevant questions."
 
-            response = client.chat.completions.create(model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "You are an expert in evaluating hackathon projects."},
-                {"role": "user", "content": prompt}
-            ])
+            response = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": "You are an expert in evaluating hackathon projects."},
+                    {"role": "user", "content": prompt}
+                ]
+            )
 
-            score_text = response.choices[0].message.content.strip()
+            score_text = response.choices[0].message['content'].strip()
             score = int(next((s for s in score_text.split() if s.isdigit()), '0'))
             evaluation_results[criterion] = score
 

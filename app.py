@@ -8,6 +8,18 @@ openai.api_key = api_key
 
 app = Flask(__name__)
 
+provided_questions = [
+    "What problem do you aim to solve?",
+    "Outline your proposed solution.",
+    "List alternatives that people currently use to solve the problem.",
+    "Clearly state why customers should choose your solution over alternatives.",
+    "List your target customer segments in order of priority.",
+    "Who are your early adopters likely to be?",
+    "List some of the methods you could use to monetize your product.",
+    "What challenges do you expect to face throughout your project?",
+    "Is there any additional information you would like to share about your project?"
+]
+
 evaluation_criteria = {
     "Problem and Solution Clarity": {
         "description": "Problem and Solution Clarity (Score out of 3): No problem identified and no solution provided: The problem is not clearly defined or relevant to the African context, and no clear solution is proposed. (0 points) Vague problem and insufficient solution detail: The problem is somewhat identified but lacks clarity or significance, and the proposed solution lacks sufficient detail or clarity. (1 point) Clear problem and vague solution: The problem is clearly defined and relevant, but the proposed solution lacks sufficient detail or clarity. (2 points) Highly relevant problem and well-constructed solution: The problem is clearly defined and highly relevant to the African context, and the solution is well-detailed, clear, and logically constructed. (3 points)",
@@ -40,42 +52,25 @@ evaluation_criteria = {
 }
 
 
-provided_questions = [
-    "What problem do you aim to solve?",
-    "Outline your proposed solution.",
-    "List alternatives that people currently use to solve the problem.",
-    "Clearly state why customers should choose your solution over alternatives.",
-    "List your target customer segments in order of priority.",
-    "Who are your early adopters likely to be?",
-    "List some of the methods you could use to monetize your product.",
-    "What challenges do you expect to face throughout your project?",
-    "Is there any additional information you would like to share about your project?"
-]
-
 @app.route('/evaluate', methods=['POST'])
-def evaluate():
+def evaluate():    
     input_data = request.json
-
     evaluation_results = {}
 
     for criterion, details in evaluation_criteria.items():
         description = details["description"]
-        relevant_questions_indices = details["relevant_questions"]
-        relevant_questions = [provided_questions[idx] for idx in relevant_questions_indices]  # Subtract 1 to use as 0-based index
+        relevant_questions = [provided_questions[idx] for idx in details["relevant_questions"]]
 
-        prompt = f"Evaluate the following project based on the {criterion} criteria: {description}\n\n"
-        prompt += "Relevant Questions:\n"
-        for rq in relevant_questions:
-            prompt += f"{rq}\n"
-        prompt += "\nProject Data:\n"
+        prompt = (f"Evaluate the following project based on the {criterion} criteria: {description}\n\n"
+                "Relevant Questions:\n" + "\n".join(relevant_questions) + "\n\nProject Data:\n")
+
         for key, value in input_data.items():
             if isinstance(value, list):
-                prompt += f"{key}:\n"
-                for i, item in enumerate(value):
-                    prompt += f"{i+1}. {item}\n"
+                prompt += f"{key}:\n" + "\n".join(f"{i+1}. {item}" for i, item in enumerate(value)) + "\n"
             else:
                 prompt += f"{key}: {value}\n"
-        prompt += f"\nProvide a numerical score out of 3 for the {criterion} based on the relevant questions."
+
+        prompt += f"\nProvide a numerical score \bOUT OF 3\b for the {criterion} based on the relevant questions."
 
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
